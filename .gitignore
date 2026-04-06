@@ -99,6 +99,6 @@ InitTestScene*.unity*
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
 
 # IDE - VS Code
+.vsconfig
 .vscode/
 *.code-workspace
-.vsconfig
