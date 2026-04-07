@@ -23,5 +23,9 @@ public class BuildingSys_Test : MonoBehaviour
         {
             grid.SetTile(cellpos, tile);
         }
+        if (Input.GetMouseButtonDown(1) && grid.HasTile(cellpos))
+        {
+            grid.SetTile(cellpos, null);
+        }
     }
 }
