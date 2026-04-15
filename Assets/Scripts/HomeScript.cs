@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class HomeScript : MonoBehaviour
 {
-    /*--------------------------------Interface-----------------------------------------*/
+/*--------------------------------Interface-----------------------------------------*/
 
     [Header("Price")]
     public float pricePerKw = 1488.0f;

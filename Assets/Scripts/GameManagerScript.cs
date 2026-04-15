@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public class GameManager : MonoBehaviour
 {
@@ -20,12 +21,14 @@ public class GameManager : MonoBehaviour
     public float totalEnergyAvailable = 74f; 
 
     [Tooltip("Bring all houses here")]
-    public HomeScript[] allHouses;
+    public List<HomeScript> allHouses = new List<HomeScript>();
 
     [Tooltip("Unused Energy")]
     public float UnusedEnergy = 0f;
 
-    /*--------------------------------Realization-----------------------------------------*/
+
+
+/*--------------------------------Realization-----------------------------------------*/
 
     private void Awake()
     {
@@ -53,7 +56,11 @@ public class GameManager : MonoBehaviour
 
     public void DistributeEnergy()
     {
-        if (allHouses == null || allHouses.Length == 0) return;
+        if (allHouses == null || allHouses.Count == 0) 
+        {
+            UnusedEnergy = totalEnergyAvailable;
+            return;
+        }
 
         float currentFrameEnergyPool = totalEnergyAvailable;
 
