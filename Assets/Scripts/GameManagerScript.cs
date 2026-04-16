@@ -19,10 +19,11 @@ public class GameManager : MonoBehaviour
     [Header("Economics")]
     public float moneyBalance = 1488f;
 
-    public float totalEnergyAvailable = 74f; 
+    public float totalEnergyAvailable = 0f; 
 
-    [Tooltip("Bring all houses here")]
+    [Header("Current Objects")]
     public List<HomeScript> allHouses = new List<HomeScript>();
+    public List<PowerPlant> allPowerPlants = new List<PowerPlant>();
 
     [Tooltip("Unused Energy")]
     public float UnusedEnergy = 0f;
@@ -85,6 +86,14 @@ public class GameManager : MonoBehaviour
 
     public void DistributeEnergy()
     {
+        totalEnergyAvailable = 0f;
+        foreach (PowerPlant plant in allPowerPlants)
+        {
+            if (plant != null)
+            {
+                totalEnergyAvailable += plant.energyGeneration;
+            }
+        }
         if (allHouses == null || allHouses.Count == 0) 
         {
             UnusedEnergy = totalEnergyAvailable;
