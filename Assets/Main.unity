@@ -6345,9 +6345,8 @@ MonoBehaviour:
   currentTime: 0
   timeSpeed: 1
   moneyBalance: 1488
-  totalEnergyAvailable: 180
-  allHouses: []
-  allPowerPlants: []
+  selectedBuildingPrefab: {fileID: 0}
+  availableBuildings: []
   UnusedEnergy: 0
   timeText: {fileID: 666207189}
   moneyText: {fileID: 1068771340}
@@ -6379,12 +6378,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9808318572ab39644b266c4ade0024e2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  housePrefab: {fileID: 9074302497400037311, guid: 4d3c03cc51a9dfe409f39948b5b8b6b3, type: 3}
-  powerPlantPrefab: {fileID: 7701424185124332095, guid: abddb4fccd0768a43916a8c052e77a5f, type: 3}
-  grid: {fileID: 1377669448}
   currentMode: 0
-  housePrice: 100
-  powerPlantPrice: 100
+  housePrefab: {fileID: 0}
+  solarPanelPrefab: {fileID: 0}
+  grid: {fileID: 1377669448}
+  buildCost: 0
   sellRefundMultiplier: 0.5
 --- !u!114 &1420153124
 MonoBehaviour:
@@ -6401,6 +6399,7 @@ MonoBehaviour:
   highlightMap: {fileID: 89146588}
   highlightTile: {fileID: 11400000, guid: b4d4bbdab8828be45a0ad4a7cfb29df7, type: 2}
   RegularTile: {fileID: 11400000, guid: 861d888413f018f4892ff47acd088725, type: 2}
+  lastTilePos: {x: 0, y: 0, z: 0}
 --- !u!1 &1504787880
 GameObject:
   m_ObjectHideFlags: 0
