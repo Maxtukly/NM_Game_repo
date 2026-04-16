@@ -11,7 +11,7 @@ public class BuildingSys_Test : MonoBehaviour
     Vector3Int cellpos;
     void Start()
     {
-        
+        Debug.Log("Im good");
     }
 
     // Update is called once per frame
