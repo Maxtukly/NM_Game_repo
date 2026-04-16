@@ -143,4 +143,9 @@ public class BuilderScript : MonoBehaviour
             GameManager.Instance.producers.Remove(producer);
         }
     }
+
+    public void OnDropdownValueChanged(int selectedIndex)
+    {
+        currentMode = (BuildMode)selectedIndex;
+    }
 }
