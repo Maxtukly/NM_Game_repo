@@ -1,8 +1,6 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-public class HomeScript : MonoBehaviour
+public class HomeScript : MonoBehaviour, IEnergyConsumer
 {
 /*--------------------------------Interface-----------------------------------------*/
 
@@ -15,7 +13,7 @@ public class HomeScript : MonoBehaviour
         new Vector2(4f, 1f),
         new Vector2(6f, 1f),  
         new Vector2(8f, 5f),   
-        new Vector2(14f, 2f),  
+        new Vector2(14f, 2f),   
         new Vector2(20f, 6f),  
         new Vector2(24f, 1f)   
     };
