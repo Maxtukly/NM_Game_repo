@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8147667384722903870}
   - component: {fileID: 3781021813626341845}
-  - component: {fileID: 7701424185124332095}
+  - component: {fileID: 4852538417983358512}
   m_Layer: 0
   m_Name: PowerPlant
   m_TagString: Untagged
@@ -85,7 +85,7 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!114 &7701424185124332095
+--- !u!114 &4852538417983358512
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -94,7 +94,16 @@ MonoBehaviour:
   m_GameObject: {fileID: 5738057938059590174}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9ba2b1e1d01b6d74cb584ad7f09890d2, type: 3}
+  m_Script: {fileID: 11500000, guid: 4570f058d6b7efc4a99eda224ee7858e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  energyGeneration: 50
+  energyMultiplier: 1
+  generationPoints:
+  - {x: 0, y: 0}
+  - {x: 6, y: 0.2}
+  - {x: 9, y: 0.6}
+  - {x: 12, y: 1}
+  - {x: 15, y: 0.7}
+  - {x: 18, y: 0.3}
+  - {x: 21, y: 0.1}
+  - {x: 24, y: 0}
