@@ -9,14 +9,14 @@ public class Solar_panScript : MonoBehaviour, IEnergyProducer
       [Header("Generation Schedule (0-24h)")]
     public Vector2[] generationPoints = new Vector2[]
     {
-        new Vector2(0f, 0f),   // ніч
+        new Vector2(0f, 0.1f),   // ніч
         new Vector2(6f, 0.2f), // світанок
         new Vector2(9f, 0.6f), // ранок
         new Vector2(12f, 1f),  // пік сонця
         new Vector2(15f, 0.7f),
         new Vector2(18f, 0.3f),
         new Vector2(21f, 0.1f),
-        new Vector2(24f, 0f)   // ніч
+        new Vector2(24f, 0.1f)   // ніч
     };
 
     private float currentGeneration;

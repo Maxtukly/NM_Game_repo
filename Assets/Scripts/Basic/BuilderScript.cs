@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class BuilderScript : MonoBehaviour
 {
@@ -32,8 +33,11 @@ public class BuilderScript : MonoBehaviour
     }
     private void Update()
     {
-       if (mainCamera == null) return;
-
+        if (mainCamera == null) return;
+        if (EventSystem.current.IsPointerOverGameObject())
+        {
+            return; 
+        }
       
         Vector3 mousePos = mainCamera.ScreenToWorldPoint(Input.mousePosition);
         mousePos.z = 0;
