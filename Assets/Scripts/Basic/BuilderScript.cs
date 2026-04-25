@@ -6,8 +6,8 @@ public class BuilderScript : MonoBehaviour
 {
 /*--------------------------------Interface-----------------------------------------*/
 
-    public enum BuildMode { None = 0, House = 1, SolarPanel = 2 }
-    public BuildMode currentMode = BuildMode.None;
+    private enum BuildMode { None = 0, House = 1, SolarPanel = 2 }
+    private BuildMode currentMode = BuildMode.None;
 
     [Header("Settings")]
     [SerializeField] private GameObject housePrefab; 
@@ -15,8 +15,8 @@ public class BuilderScript : MonoBehaviour
     [SerializeField] private Grid grid; 
 
     [Header("Economics")]
-    public float buildCost;
-    public float sellRefundMultiplier = 0.8f; 
+    private float buildCost;
+    private float sellRefundMultiplier = 0.8f; 
 
  /*-------------------------------- DATA --------------------------------*/
 
@@ -30,6 +30,8 @@ public class BuilderScript : MonoBehaviour
     private void Start()
     {
         mainCamera = Camera.main;
+        Debug.Log("Game started!");
+        
     }
     private void Update()
     {
@@ -50,6 +52,7 @@ public class BuilderScript : MonoBehaviour
         {
            
             Build(cellPos);
+            Debug.Log($"Attempring to build {currentMode} at {cellPos}");
            
         }
 
@@ -57,6 +60,7 @@ public class BuilderScript : MonoBehaviour
         if (Input.GetMouseButtonDown(1))
         {
             Sell(cellPos);
+            Debug.Log($"Attempring to sell {currentMode} at {cellPos}");
         }
     }
 
@@ -130,6 +134,7 @@ public class BuilderScript : MonoBehaviour
         if (obj.TryGetComponent<IEnergyProducer>(out var producer))
         {
             GameManager.Instance.producers.Add(producer);
+           
         }
     }
 
@@ -151,5 +156,6 @@ public class BuilderScript : MonoBehaviour
     public void OnDropdownValueChanged(int selectedIndex)
     {
         currentMode = (BuildMode)selectedIndex;
+        Debug.Log($"Selected build mode: {currentMode}");
     }
 }

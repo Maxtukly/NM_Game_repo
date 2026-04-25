@@ -14,39 +14,34 @@ public class GameManager : MonoBehaviour
     public float currentTime = 0f;
     
     [Tooltip("TimeMultiplySpeed")]
-    public float timeSpeed = 1f;
+    [SerializeField] private float timeSpeed = 1f;
 
     [Header("Economics")]
     public float moneyBalance = 0f;
 
-    [Header("Buildings")]
-    public GameObject selectedBuildingPrefab; // Поточний вибраний будинок для будівництва
-    public List<GameObject> availableBuildings = new List<GameObject>(); // Список доступних будинків для вибору
-    private int selectedIndex = 0; // Індекс вибраного будинку в списку availableBuildings
-
+    
     [Tooltip("Energy")]
-    public float UnusedEnergy = 0f;
+    [SerializeField] private float UnusedEnergy = 0f;
 
     public List<IEnergyConsumer> consumers = new List<IEnergyConsumer>(); // Список всіх споживачів енергії в грі
     public List<IEnergyProducer> producers = new List<IEnergyProducer>(); // Список всіх виробників енергії в грі
 
     [Header("UI")]
-    public TextMeshProUGUI timeText;
-    public TextMeshProUGUI moneyText;
-    public TextMeshProUGUI energyText;
-    public TextMeshProUGUI dateText;
-    public TextMeshProUGUI networkLoadText;
-    private int date = 1;
-    private float networkLoad;
+    [SerializeField] private TextMeshProUGUI timeText;
+    [SerializeField] private TextMeshProUGUI moneyText;
+    [SerializeField] private TextMeshProUGUI energyText;
+    [SerializeField] private TextMeshProUGUI dateText;
+    [SerializeField] private TextMeshProUGUI networkLoadText;
+    [SerializeField] private int date = 1;
+    [SerializeField] private float networkLoad;
 
     [Header("Blackout Settings")]
-    public bool isBlackout = false; 
-    public float BlackoutTime = 10f;
+    [SerializeField] private bool isBlackout = false; 
     private float blackoutTimer = 0f; // Скільки секунд залишилося до увімкнення
-    public GameObject blackoutPanel; // ui панелька
-    public TextMeshProUGUI blackoutPopupTimerText; 
+    [SerializeField] private GameObject blackoutPanel; // ui панелька
+    [SerializeField] private TextMeshProUGUI blackoutPopupTimerText; 
     private float graceTimer = 0f; // Таймер імунітету
-    public float graceDuration = 18f; // Скільки секунд даємо гравцю на виправлення проблеми
+    [SerializeField] private float graceDuration = 18f; // Скільки секунд даємо гравцю на виправлення проблеми
 
 
 
@@ -124,6 +119,7 @@ public class GameManager : MonoBehaviour
         {
             networkLoadText.text = "АВАРІЯ!";
             networkLoadText.color = Color.red;
+            
         }
         // Стан 2: імунітет після блекауту
         else if (graceTimer > 0f)
@@ -193,25 +189,5 @@ public class GameManager : MonoBehaviour
         moneyBalance += amount;
     }
 
-    public void SelectNextBuilding() // Метод для вибору наступної структури в списку
-    {
-        if (availableBuildings.Count == 0) return;
-
-        selectedIndex++;
-        if (selectedIndex >= availableBuildings.Count)
-            selectedIndex = 0;
-
-        selectedBuildingPrefab = availableBuildings[selectedIndex];
-    }
-
-    public void SelectPreviousBuilding() // Метод для вибору попередньої структури в списку
-    {
-        if (availableBuildings.Count == 0) return;
-
-        selectedIndex--;
-        if (selectedIndex < 0)
-            selectedIndex = availableBuildings.Count - 1;
-
-        selectedBuildingPrefab = availableBuildings[selectedIndex];
-    }
+    
 }

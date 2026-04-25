@@ -3,26 +3,39 @@ using UnityEngine;
 public class Solar_panScript : MonoBehaviour, IEnergyProducer
 {
 /*--------------------------------Interface-----------------------------------------*/
-     [Header("Energy Generation Price")]
+
+    [Header("Energy Generation")]
     public float energyMultiplier = 1f;
 
-      [Header("Generation Schedule (0-24h)")]
-    public Vector2[] generationPoints = new Vector2[]
-    {
-        new Vector2(0f, 0.1f),   // ніч
-        new Vector2(6f, 0.2f), // світанок
-        new Vector2(9f, 0.6f), // ранок
-        new Vector2(12f, 1f),  // пік сонця
-        new Vector2(15f, 0.7f),
-        new Vector2(18f, 0.3f),
-        new Vector2(21f, 0.1f),
-        new Vector2(24f, 0.1f)   // ніч
-    };
+    [Header("Generation Schedule (0-24h)")]
+
+    [System.NonSerialized]
+    public Vector2[] generationPoints;
 
     private float currentGeneration;
 
     /*--------------------------------Realization-----------------------------------------*/
+ 
 
+    private void Awake()
+    {   
+        // значення визначаються в коді, не в префабах
+        generationPoints = new Vector2[]
+        {
+            new Vector2(0f,  0f),   // північ — генерації нема
+            new Vector2(5f,  0f),   // до світанку — нема
+            new Vector2(6f,  4f),   // світанок — мінімум
+            new Vector2(8f,  10f),   // ранок — зростання
+            new Vector2(10f, 17f),  // до полудня
+            new Vector2(12f, 22f),  // пік (полудень)
+            new Vector2(14f, 20f),  // після піку
+            new Vector2(16f, 16f),  // вечір — спад
+            new Vector2(18f, 10f),   // захід
+            new Vector2(19f, 5f),   // сутінки
+            new Vector2(20f, 2f),   // майже темно
+            new Vector2(24f, 0f)     // темрява — нема
+        };
+    }
     private void Update()
     {
         float time = GameManager.Instance.currentTime;
@@ -31,6 +44,7 @@ public class Solar_panScript : MonoBehaviour, IEnergyProducer
 
         currentGeneration = Mathf.Max(0f, currentGeneration);
     }
+
 
     public float ProduceEnergy()
     {

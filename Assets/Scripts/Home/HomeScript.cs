@@ -5,10 +5,10 @@ public class HomeScript : MonoBehaviour, IEnergyConsumer
 /*--------------------------------Interface-----------------------------------------*/
 
     [Header("Price")]
-    public float pricePerKw = 1488.0f;
+    [SerializeField] private float pricePerKw = 1488.0f;
 
     [Header("Consumption Schedule")]
-    public Vector2[] demandPoints = new Vector2[]
+    private Vector2[] demandPoints = new Vector2[]
     {
         new Vector2(4f, 1f),
         new Vector2(6f, 1f),  
