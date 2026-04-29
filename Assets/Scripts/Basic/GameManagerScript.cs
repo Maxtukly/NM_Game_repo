@@ -24,7 +24,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private float UnusedEnergy = 0f;
 
     public List<IEnergyConsumer> consumers = new List<IEnergyConsumer>(); // Список всіх споживачів енергії в грі
-    public List<IEnergyProducer> producers = new List<IEnergyProducer>(); // Список всіх виробників енергії в грі
+    public List<IEnergyProducer> producers = new List<IEnergyProducer>(); // Список всіх виробникі   енергії в грі
 
     [Header("UI")]
     [SerializeField] private TextMeshProUGUI timeText;
@@ -37,11 +37,14 @@ public class GameManager : MonoBehaviour
 
     [Header("Blackout Settings")]
     [SerializeField] private bool isBlackout = false; 
-    private float blackoutTimer = 0f; // Скільки секунд залишилося до увімкнення
+    private float blackoutTimer = 0f; // Скільки секунд залишилося до увімкнення світла
     [SerializeField] private GameObject blackoutPanel; // ui панелька
     [SerializeField] private TextMeshProUGUI blackoutPopupTimerText; 
     private float graceTimer = 0f; // Таймер імунітету
     [SerializeField] private float graceDuration = 18f; // Скільки секунд даємо гравцю на виправлення проблеми
+
+    [Header("Analytics")]
+    public TextMeshProUGUI forecastText;
 
 
 
@@ -188,6 +191,64 @@ public class GameManager : MonoBehaviour
     {
         moneyBalance += amount;
     }
-
     
+    public List<Vector2> GetGraphData()
+    {
+        List<Vector2> dataPoints = new List<Vector2>();
+        float step = 0.5f; // кожні 30 хвилин
+
+        for (float t = 0; t <= 24f; t += step)
+        {
+            float totalDemandAtTime = 0f;
+            foreach (var c in consumers)
+            {
+                totalDemandAtTime += c.GetExpectedDemand(t);
+            }
+            dataPoints.Add(new Vector2(t, totalDemandAtTime));
+        }
+        return dataPoints;
+    }
+
+    public string GetBlackoutForecast()
+    {
+        float currentGen = 0f;
+        foreach (var p in producers) currentGen += p.ProduceEnergy();
+
+        if (currentGen <= 0) return "Генерація відсутня";
+
+        for (float offset = 0; offset <= 24f; offset += 0.25f) // Крок 15 ігрових хвилин
+        {
+            float checkTime = (currentTime + offset) % 24f;
+            float totalDemand = 0f;
+            foreach (var c in consumers) totalDemand += c.GetExpectedDemand(checkTime);
+
+            if (totalDemand > currentGen)
+            {
+                // Якщо аварія прямо зараз (offset == 0)
+                if (offset == 0) return "Блекаут вже почався!";
+
+                // 1. Час на ігровому годиннику (коли це станеться)
+                int clockH = Mathf.FloorToInt(checkTime);
+                int clockM = Mathf.FloorToInt((checkTime - clockH) * 60);
+
+                // 2. Скільки ігрового часу залишилося (через скільки це станеться)
+                int waitH = Mathf.FloorToInt(offset);
+                int waitM = Mathf.FloorToInt((offset - waitH) * 60);
+
+                // 3. Скільки це в РЕАЛЬНИХ секундах (Ігровий час ділимо на швидкість гри)
+                float realSeconds = offset / timeSpeed;
+
+                // Виводимо повну та зрозумілу інформацію
+                return $"Аварія о {clockH:00}:{clockM:00}\n(через {waitH}г {waitM}хв / {realSeconds:F1} сек)";
+            }
+        }
+        return "Система стабільна на час прогнозування";
+    }
+
+    // 3. Метод для кнопки
+    public void UpdateForecastUI()
+    {
+        if (forecastText != null)
+            forecastText.text = GetBlackoutForecast();
+    }
 }

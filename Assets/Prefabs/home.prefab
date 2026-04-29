@@ -97,12 +97,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e6f894b953a8cf943ab4c2da506649da, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pricePerKw: 0.1
-  demandPoints:
-  - {x: 2, y: 1}
-  - {x: 4, y: 1}
-  - {x: 6, y: 3}
-  - {x: 8, y: 5}
-  - {x: 14, y: 2}
-  - {x: 20, y: 8}
-  - {x: 24, y: 4}
+  pricePerKw: 1
+  moneyPopupPrefab: {fileID: 8125313008141962816, guid: 7b4f2edb1778cb1469f73956345f4f75, type: 3}

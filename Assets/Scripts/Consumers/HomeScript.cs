@@ -10,15 +10,21 @@ public class HomeScript : MonoBehaviour, IEnergyConsumer
     [Header("Consumption Schedule")]
     private Vector2[] demandPoints = new Vector2[]
     {
-        new Vector2(4f, 1f),
-        new Vector2(6f, 1f),  
-        new Vector2(8f, 5f),   
-        new Vector2(14f, 2f),   
-        new Vector2(20f, 6f),  
-        new Vector2(24f, 1f)   
+        new Vector2(4f, 0.1f),
+        new Vector2(6f, 0.1f),  
+        new Vector2(8f, 0.5f),   
+        new Vector2(14f, 0.2f),   
+        new Vector2(20f, 0.6f),  
+        new Vector2(24f, 0.1f)   
     };
     
     private float currentDemand;
+    [Header("Visual")]
+    public GameObject moneyPopupPrefab; 
+    
+    private float accumulatedMoney = 0f; 
+    private float popupTimer = 0f; 
+    private float popupInterval = 2f; 
 
 
 /*--------------------------------Realization-----------------------------------------*/
@@ -28,6 +34,36 @@ public class HomeScript : MonoBehaviour, IEnergyConsumer
         float globalTime = GameManager.Instance.currentTime;
         currentDemand = LagrangeInt(globalTime, demandPoints);
         currentDemand = Mathf.Max(0f, currentDemand);
+        popupTimer += Time.deltaTime;
+        if (popupTimer >= popupInterval)
+        {
+         
+            if (Mathf.Abs(accumulatedMoney) > 0.1f && moneyPopupPrefab != null) 
+            {
+                ShowMoneyPopup(accumulatedMoney);
+                accumulatedMoney = 0f; 
+            }
+            popupTimer = 0f; 
+        }
+    }
+
+    private void ShowMoneyPopup(float amount)
+    {
+        Vector3 spawnPosition = transform.position + Vector3.up; 
+        
+        GameObject popup = Instantiate(moneyPopupPrefab, spawnPosition, Quaternion.identity);
+        
+        if (popup.TryGetComponent<MoneyPopup>(out var popupScript))
+        {
+            popupScript.Setup(amount);
+        }
+    }
+    public float GetExpectedDemand(float futureTime)
+    {
+        float t = futureTime % 24f; 
+        float rawDemand = LagrangeInt(t, demandPoints);
+        
+        return Mathf.Max(0f, rawDemand); 
     }
 
     public float ConsumeEnergy(float suppliedEnergy)
@@ -38,7 +74,10 @@ public class HomeScript : MonoBehaviour, IEnergyConsumer
         
         GameManager.Instance.AddMoney(currentPay);
         
+        accumulatedMoney += currentPay;
+
         return consumedEnergy;
+        
     }
 
     private float LagrangeInt(float x, Vector2[] points)

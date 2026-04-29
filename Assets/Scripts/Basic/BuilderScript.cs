@@ -6,19 +6,20 @@ public class BuilderScript : MonoBehaviour
 {
 /*--------------------------------Interface-----------------------------------------*/
 
-    private enum BuildMode { None = 0, House = 1, SolarPanel = 2 }
+    private enum BuildMode { None = 0, House = 1, BasicStation = 2, SolarPanel = 3 , Factory = 4}
     private BuildMode currentMode = BuildMode.None;
 
     [Header("Settings")]
     [SerializeField] private GameObject housePrefab; 
+    [SerializeField] private GameObject basicStationPrefab; 
     [SerializeField] private GameObject solarPanelPrefab; 
+    [SerializeField] private GameObject factoryPrefab; 
     [SerializeField] private Grid grid; 
 
-    [Header("Economics")]
     private float buildCost;
     private float sellRefundMultiplier = 0.8f; 
 
- /*-------------------------------- DATA --------------------------------*/
+    /*-------------------------------- DATA -----------------------------------------------*/
 
     private Dictionary<Vector3Int, (GameObject obj, float cost)> builtBuildings = new Dictionary<Vector3Int, (GameObject obj, float cost)>();
     private Camera mainCamera;
@@ -78,10 +79,20 @@ public class BuilderScript : MonoBehaviour
             buildCost = 100f;
             prefabToBuild = housePrefab;
         }
+        else if (currentMode == BuildMode.BasicStation)
+        {
+            buildCost = 500f;
+            prefabToBuild = basicStationPrefab;
+        }
         else if (currentMode == BuildMode.SolarPanel)
         {
-            buildCost = 200f;
+            buildCost = 400f;
             prefabToBuild = solarPanelPrefab;
+        }
+        else if (currentMode == BuildMode.Factory)
+        {
+            buildCost = 1000f;
+            prefabToBuild = factoryPrefab;
         }
         else
         {
