@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using TMPro;
+using UnityEngine.Events;
 
 public class GameManager : MonoBehaviour
 {
@@ -47,8 +48,8 @@ public class GameManager : MonoBehaviour
     public TextMeshProUGUI forecastText;
 
 
-
-/*--------------------------------Realization-----------------------------------------*/
+    public UnityEvent onDateChange;
+    /*--------------------------------Realization-----------------------------------------*/
 
     private void Awake()
     {
@@ -60,6 +61,7 @@ public class GameManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(this.gameObject);
+            onDateChange = new UnityEvent(); // Ініціалізуємо подію
         }
     }
 
@@ -73,6 +75,7 @@ public class GameManager : MonoBehaviour
             else date = 1;
             
             currentTime -= 24f;
+            onDateChange?.Invoke(); // Викликаємо подію зміни дати
         }
        if (isBlackout)
         {
@@ -251,4 +254,6 @@ public class GameManager : MonoBehaviour
         if (forecastText != null)
             forecastText.text = GetBlackoutForecast();
     }
+
+    
 }

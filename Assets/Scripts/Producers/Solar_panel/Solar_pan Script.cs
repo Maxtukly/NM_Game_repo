@@ -4,9 +4,6 @@ public class Solar_panScript : MonoBehaviour, IEnergyProducer
 {
 /*--------------------------------Interface-----------------------------------------*/
 
-    [Header("Energy Generation")]
-    public float energyMultiplier = 1f;
-
     [Header("Generation Schedule (0-24h)")]
 
     [System.NonSerialized]
@@ -36,6 +33,12 @@ public class Solar_panScript : MonoBehaviour, IEnergyProducer
             new Vector2(24f, 0f)     // темрява — нема
         };
     }
+
+    void Start()
+    {
+        // реєструємося в GameManager як виробник енергії
+        GameManager.Instance.producers.Add(this);
+    }
     private void Update()
     {
         float time = GameManager.Instance.currentTime;
@@ -49,7 +52,7 @@ public class Solar_panScript : MonoBehaviour, IEnergyProducer
     public float ProduceEnergy()
     {
         // базова генерація
-        float produced = currentGeneration * energyMultiplier;
+        float produced = currentGeneration * WeatherManager.Instance.SolarEnergyModifier;
 
         // в GameManager як згенеровану енергію враховувати поточну генерацію сонячної панелі
         return produced;
