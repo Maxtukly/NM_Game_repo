@@ -1,259 +1,224 @@
-using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine;
 using TMPro;
 using UnityEngine.Events;
 
+// Відповідальність: агрегація даних від усіх підстанцій і виведення у UI.
+// GameManager НЕ рахує енергію — тільки збирає готові значення від SubstationScript і передає їх у текстові поля.
+// Також зберігає глобальний ігровий час і економіку.
+
 public class GameManager : MonoBehaviour
 {
-/*--------------------------------Interface-----------------------------------------*/
-
     public static GameManager Instance { get; private set; }
 
-    [Header("TimeSettings")]
-    [Tooltip("CurrentTime")]
+    /*-------------------------------- Час ------------------------------------------*/
+
+    [Header("Time Settings")]
     [Range(0f, 24f)]
     public float currentTime = 0f;
-    
-    [Tooltip("TimeMultiplySpeed")]
+
     [SerializeField] private float timeSpeed = 1f;
+    [SerializeField] private int date = 1;
+
+    ///Подія зміни дати — підписується WeatherManager
+    public UnityEvent onDateChange;
+
+    /*-------------------------------- Економіка ------------------------------------*/
 
     [Header("Economics")]
     public float moneyBalance = 0f;
 
-    
-    [Tooltip("Energy")]
-    [SerializeField] private float UnusedEnergy = 0f;
+    /*-------------------------------- UI -------------------------------------------*/
 
-    public List<IEnergyConsumer> consumers = new List<IEnergyConsumer>(); // Список всіх споживачів енергії в грі
-    public List<IEnergyProducer> producers = new List<IEnergyProducer>(); // Список всіх виробникі   енергії в грі
-
-    [Header("UI")]
+    [Header("UI — Час і гроші")]
     [SerializeField] private TextMeshProUGUI timeText;
-    [SerializeField] private TextMeshProUGUI moneyText;
-    [SerializeField] private TextMeshProUGUI energyText;
     [SerializeField] private TextMeshProUGUI dateText;
+    [SerializeField] private TextMeshProUGUI moneyText;
+
+    [Header("UI — Мережа (агрегат по всіх підстанціях)")]
+    [SerializeField] private TextMeshProUGUI totalGenerationText;
+    [SerializeField] private TextMeshProUGUI totalDemandText;
     [SerializeField] private TextMeshProUGUI networkLoadText;
-    [SerializeField] private int date = 1;
-    [SerializeField] private float networkLoad;
 
-    [Header("Blackout Settings")]
-    [SerializeField] private bool isBlackout = false; 
-    private float blackoutTimer = 0f; // Скільки секунд залишилося до увімкнення світла
-    [SerializeField] private GameObject blackoutPanel; // ui панелька
-    [SerializeField] private TextMeshProUGUI blackoutPopupTimerText; 
-    private float graceTimer = 0f; // Таймер імунітету
-    [SerializeField] private float graceDuration = 18f; // Скільки секунд даємо гравцю на виправлення проблеми
+    [Header("UI — Аналітика")]
+    [SerializeField] private TextMeshProUGUI forecastText;
 
-    [Header("Analytics")]
-    public TextMeshProUGUI forecastText;
+    /*-------------------------------- Реєстр підстанцій ----------------------------*/
 
+    /// Список всіх активних підстанцій на карті.
+    /// Заповнюється через RegisterSubstation() при побудові,
+    /// очищається через UnregisterSubstation() при продажу.
+     private readonly List<SubstationScript> _substations = new List<SubstationScript>();
 
-    public UnityEvent onDateChange;
-    /*--------------------------------Realization-----------------------------------------*/
+    // Для зворотної сумісності зі старим кодом (GraphScript, GetBlackoutForecast)
+    public List<IEnergyConsumer> consumers = new List<IEnergyConsumer>();
+    public List<IEnergyProducer> producers = new List<IEnergyProducer>();
+
+    /*-------------------------------- Realization ------------------------------------*/
 
     private void Awake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(this.gameObject);
-        }
-        else
-        {
-            Instance = this;
-            DontDestroyOnLoad(this.gameObject);
-            onDateChange = new UnityEvent(); // Ініціалізуємо подію
-        }
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+        onDateChange = new UnityEvent();
     }
 
     private void Update()
     {
+        TickTime();
+        UpdateAllUI();
+    }
+
+    /*-------------------------------- Час ------------------------------------------*/
+
+    private void TickTime()
+    {
         currentTime += Time.deltaTime * timeSpeed;
-        
+
         if (currentTime >= 24f)
         {
-            if (date < 31) date += 1;
-            else date = 1;
-            
             currentTime -= 24f;
-            onDateChange?.Invoke(); // Викликаємо подію зміни дати
+            date = (date < 31) ? date + 1 : 1;
+            onDateChange?.Invoke();
         }
-       if (isBlackout)
-        {
-            blackoutTimer -= Time.deltaTime; 
-            
-            if (blackoutPopupTimerText != null)
-                blackoutPopupTimerText.text = $"Відновлення через: {blackoutTimer:F1} с";
+    }
 
-            if (blackoutTimer <= 0f)
-            {
-                isBlackout = false;
-                
-                // ІМУНІТЕТ на 18 секунд
-                graceTimer = graceDuration; 
-                
-                if (blackoutPanel != null) 
-                    blackoutPanel.SetActive(false); 
-            }
-        }
-        else if (graceTimer > 0f) // Якщо світло є, але імунітет ще активний
-        {
-            graceTimer -= Time.deltaTime; 
-        }
-        
-        DistributeEnergy();
-        
+    /*-------------------------------- Реєстрація підстанцій ------------------------*/
+
+    public void RegisterSubstation(SubstationScript sub)
+    {
+        if (!_substations.Contains(sub))
+            _substations.Add(sub);
+    }
+
+    public void UnregisterSubstation(SubstationScript sub)
+    {
+        _substations.Remove(sub);
+    }
+
+    /*-------------------------------- Економіка ------------------------------------*/
+
+    public void AddMoney(float amount) => moneyBalance += amount;
+
+    /*-------------------------------- UI -------------------------------------------*/
+
+    private void UpdateAllUI()
+    {
         UpdateClockUI();
-        UpdateEconomicsUI();
+        UpdateMoneyUI();
+        UpdateNetworkUI();
     }
 
     private void UpdateClockUI()
     {
-        int hours = Mathf.FloorToInt(currentTime);
-        int minutes = Mathf.FloorToInt((currentTime - hours) * 60f);
-
-        timeText.text = $"Час: {hours:00}:{minutes:00}";
+        int h = Mathf.FloorToInt(currentTime);
+        int m = Mathf.FloorToInt((currentTime - h) * 60f);
+        timeText.text = $"Час: {h:00}:{m:00}";
         dateText.text = $"{date}";
     }
 
-   private void UpdateEconomicsUI()
+    private void UpdateMoneyUI()
     {
         moneyText.text = $"Бюджет: {moneyBalance:F0} $";
-        energyText.text = $"Залишок енергії: {UnusedEnergy:F1} кВт";
+    }
 
-        // Стан 1: Повний блекаут
-        if (isBlackout)
-        {
-            networkLoadText.text = "АВАРІЯ!";
-            networkLoadText.color = Color.red;
-            
-        }
-        // Стан 2: імунітет після блекауту
-        else if (graceTimer > 0f)
-        {
-            //  зворотний відлік до можливого нового блекауту
-            networkLoadText.text = $"Імунітет: {graceTimer:F1} с";
-            
-          
-            networkLoadText.color = Color.yellow; 
-        }
-        // Стан 3: Звичайна робота мережі
-        else
-        {
-            networkLoadText.text = $"Навантаження: {networkLoad:0}%";
+    
+    /// Агрегує дані від ВСІХ підстанцій і виводить загальну картину мережі.
+    /// Якщо хоча б одна підстанція в блекауті — показуємо попередження.
+    private void UpdateNetworkUI()
+    {
+        float totalGen  = 0f;
+        float totalDem  = 0f;
+        bool  anyBlackout = false;
 
-            // Якщо навантаження критичне 
-            if (networkLoad >= 90f)
+        foreach (var sub in _substations)
+        {
+            totalGen     += sub.TotalGeneration;
+            totalDem     += sub.TotalDemand;
+            anyBlackout  |= sub.IsBlackout;
+        }
+
+        // Виводимо агреговані значення
+        if (totalGenerationText != null)
+            totalGenerationText.text = $"Генерація: {totalGen:F1} кВт";
+
+        if (totalDemandText != null)
+            totalDemandText.text = $"Попит: {totalDem:F1} кВт";
+
+        if (networkLoadText != null)
+        {
+            if (anyBlackout)
             {
+                networkLoadText.text  = "АВАРІЯ В МЕРЕЖІ!";
                 networkLoadText.color = Color.red;
+            }
+            else if (totalGen > 0f)
+            {
+                float load = (totalDem / totalGen) * 100f;
+                networkLoadText.text  = $"Навантаження: {load:F0}%";
+                networkLoadText.color = load >= 90f ? Color.red : Color.white;
             }
             else
             {
-                networkLoadText.color = Color.white; 
+                networkLoadText.text  = "Генерація відсутня";
+                networkLoadText.color = Color.grey;
             }
         }
     }
 
-  public void DistributeEnergy()
-    {
-        float generated_en = 0f;
+    /*-------------------------------- Аналітика для Графіка  ------------------*/
 
-        if (!isBlackout)
-        {
-            foreach (var p in producers) 
-                generated_en += p.ProduceEnergy();
-        }
-
-        float remaining_en = generated_en;
-
-        foreach (var c in consumers)
-            remaining_en -= c.ConsumeEnergy(remaining_en);
-
-        UnusedEnergy = remaining_en;
-
-        //Підрахунок навантаження 
-        if (generated_en > 0f) 
-        {
-            float consumed_en = generated_en - UnusedEnergy; 
-            networkLoad = (consumed_en / generated_en) * 100f; 
-
-            // блекаут
-            if (networkLoad >= 100f && !isBlackout && graceTimer <= 0f) 
-            {
-                isBlackout = true;
-                blackoutTimer = 10f; 
-                if (blackoutPanel != null) 
-                    blackoutPanel.SetActive(true); 
-            }
-        }
-        else
-        {
-            networkLoad = 0f; 
-        }
-    }
-    public void AddMoney(float amount)
-    {
-        moneyBalance += amount;
-    }
     
+    /// Збирає дані прогнозу попиту — залишається для GraphScript без змін.
     public List<Vector2> GetGraphData()
     {
-        List<Vector2> dataPoints = new List<Vector2>();
-        float step = 0.5f; // кожні 30 хвилин
+        var dataPoints = new List<Vector2>();
+        float step = 0.5f;
 
         for (float t = 0; t <= 24f; t += step)
         {
             float totalDemandAtTime = 0f;
             foreach (var c in consumers)
-            {
                 totalDemandAtTime += c.GetExpectedDemand(t);
-            }
+
             dataPoints.Add(new Vector2(t, totalDemandAtTime));
         }
         return dataPoints;
     }
 
+  
+    /// Прогноз блекауту
     public string GetBlackoutForecast()
     {
         float currentGen = 0f;
         foreach (var p in producers) currentGen += p.ProduceEnergy();
-
         if (currentGen <= 0) return "Генерація відсутня";
 
-        for (float offset = 0; offset <= 24f; offset += 0.25f) // Крок 15 ігрових хвилин
+        for (float offset = 0; offset <= 24f; offset += 0.25f)
         {
-            float checkTime = (currentTime + offset) % 24f;
+            float checkTime  = (currentTime + offset) % 24f;
             float totalDemand = 0f;
             foreach (var c in consumers) totalDemand += c.GetExpectedDemand(checkTime);
 
             if (totalDemand > currentGen)
             {
-                // Якщо аварія прямо зараз (offset == 0)
                 if (offset == 0) return "Блекаут вже почався!";
-
-                // 1. Час на ігровому годиннику (коли це станеться)
                 int clockH = Mathf.FloorToInt(checkTime);
                 int clockM = Mathf.FloorToInt((checkTime - clockH) * 60);
-
-                // 2. Скільки ігрового часу залишилося (через скільки це станеться)
-                int waitH = Mathf.FloorToInt(offset);
-                int waitM = Mathf.FloorToInt((offset - waitH) * 60);
-
-                // 3. Скільки це в РЕАЛЬНИХ секундах (Ігровий час ділимо на швидкість гри)
+                int waitH  = Mathf.FloorToInt(offset);
+                int waitM  = Mathf.FloorToInt((offset - waitH) * 60);
                 float realSeconds = offset / timeSpeed;
-
-                // Виводимо повну та зрозумілу інформацію
                 return $"Аварія о {clockH:00}:{clockM:00}\n(через {waitH}г {waitM}хв / {realSeconds:F1} сек)";
             }
         }
-        return "Система стабільна на час прогнозування";
+        return "Система стабільна";
     }
 
-    // 3. Метод для кнопки
+    // Викликається UI для оновлення прогнозу після зміни мережі.
     public void UpdateForecastUI()
     {
         if (forecastText != null)
             forecastText.text = GetBlackoutForecast();
     }
-
-    
 }

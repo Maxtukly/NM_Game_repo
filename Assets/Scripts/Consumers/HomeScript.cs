@@ -1,8 +1,13 @@
 using UnityEngine;
 
-public class HomeScript : MonoBehaviour, IEnergyConsumer
+public class HomeScript : MonoBehaviour, IEnergyConsumer, IEnergyObject
 {
 /*--------------------------------Interface-----------------------------------------*/
+
+    public GameObject GameObject => gameObject;
+    public bool IsConnected { get; set; }
+    public int MaxSlots => 1;
+    public int UsedSlots => IsConnected ? 1 : 0;
 
     [Header("Price")]
     [SerializeField] private float pricePerKw = 1488.0f;

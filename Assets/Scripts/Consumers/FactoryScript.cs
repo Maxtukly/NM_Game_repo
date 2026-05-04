@@ -1,9 +1,14 @@
 using UnityEngine;
 
-public class FactoryScript : MonoBehaviour, IEnergyConsumer
+public class FactoryScript : MonoBehaviour, IEnergyConsumer, IEnergyObject
 {
 
 /*--------------------------------Interface-----------------------------------------*/
+
+    public GameObject GameObject => gameObject;
+    public bool IsConnected { get; set; }
+    public int MaxSlots => 1;
+    public int UsedSlots => IsConnected ? 1 : 0;
 
     [Header("Economics")]
     public float pricePerKw = 3500f;

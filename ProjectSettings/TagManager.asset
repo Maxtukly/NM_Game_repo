@@ -11,7 +11,7 @@ TagManager:
   - 
   - Water
   - UI
-  - 
+  - Buildings
   - 
   - 
   - 
@@ -43,6 +43,9 @@ TagManager:
     locked: 0
   - name: Tiles
     uniqueID: 4023865675
+    locked: 0
+  - name: Buildings
+    uniqueID: 3827844909
     locked: 0
   - name: Tile_UI
     uniqueID: 3922916171

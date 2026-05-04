@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 6454290169629958218}
   - component: {fileID: 7573443110721889123}
   - component: {fileID: 4791040330089598517}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: MoneyPopUp
   m_TagString: Untagged
   m_Icon: {fileID: 0}

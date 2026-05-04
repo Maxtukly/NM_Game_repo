@@ -1,8 +1,12 @@
 using UnityEngine;
 
 // Підписуємо контракт IEnergyProducer
-public class BasicStation : MonoBehaviour, IEnergyProducer
+public class BasicStation : MonoBehaviour, IEnergyProducer, IEnergyObject
 {
+    public GameObject GameObject => gameObject;
+    public bool IsConnected { get; set; }
+    public int MaxSlots => 1;
+    public int UsedSlots => IsConnected ? 1 : 0;
     [Header("Info")]
     [Tooltip("Скільки енергії (кВт) станція генерує щосекунди")]
     public float baseGeneration = 200f; 

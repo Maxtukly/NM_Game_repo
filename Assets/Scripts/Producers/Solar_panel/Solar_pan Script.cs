@@ -1,8 +1,13 @@
 using UnityEngine;
 
-public class Solar_panScript : MonoBehaviour, IEnergyProducer
+public class Solar_panScript : MonoBehaviour, IEnergyProducer, IEnergyObject
 {
 /*--------------------------------Interface-----------------------------------------*/
+
+    public GameObject GameObject => gameObject;
+    public bool IsConnected { get; set; }
+    public int MaxSlots => 1;
+    public int UsedSlots => IsConnected ? 1 : 0;
 
     [Header("Generation Schedule (0-24h)")]
 
