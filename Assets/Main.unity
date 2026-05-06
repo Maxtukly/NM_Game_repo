@@ -7535,6 +7535,51 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 690099331}
   m_CullTransparentMesh: 1
+--- !u!1 &710067087
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 710067088}
+  - component: {fileID: 710067089}
+  m_Layer: 0
+  m_Name: SubstationManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &710067088
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 710067087}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -5.29524, y: -1.227769, z: 2216.6772}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &710067089
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 710067087}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c00c944de8279d49aeef4af091af5c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SelectedSubstation: {fileID: 0}
 --- !u!1 &719604145
 GameObject:
   m_ObjectHideFlags: 0
@@ -12679,7 +12724,7 @@ MonoBehaviour:
     m_NormalColor: {r: 0.5169811, g: 0.13558558, b: 0.23861966, a: 1}
     m_HighlightedColor: {r: 0.7283019, g: 0.22948377, b: 0.3631878, a: 1}
     m_PressedColor: {r: 0.4339623, g: 0.0646849, b: 0.1636666, a: 1}
-    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_SelectedColor: {r: 0.5176471, g: 0.13725491, b: 0.2392157, a: 1}
     m_DisabledColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.5019608}
     m_ColorMultiplier: 1
     m_FadeDuration: 0.1
@@ -12699,9 +12744,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 6037927837978394956, guid: 95d579b9552e07048a5bd55bdd581734, type: 3}
-        m_TargetAssemblyTypeName: SubstationScript, Assembly-CSharp
-        m_MethodName: ManualRestore
+      - m_Target: {fileID: 710067089}
+        m_TargetAssemblyTypeName: SelectionManager, Assembly-CSharp
+        m_MethodName: CallManualRestoreOnSelected
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -13276,7 +13321,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1126118191}
   - component: {fileID: 1126118190}
-  m_Layer: 6
+  m_Layer: 0
   m_Name: CablePreview
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -13304,7 +13349,7 @@ LineRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 0}
+  - {fileID: 10306, guid: 0000000000000000f000000000000000, type: 0}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -13322,9 +13367,9 @@ LineRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: -467122387
-  m_SortingLayer: 2
-  m_SortingOrder: 10
+  m_SortingLayerID: 664997999
+  m_SortingLayer: 6
+  m_SortingOrder: 100
   m_Positions:
   - {x: 0, y: 0, z: 0}
   - {x: 0, y: 0, z: 1}
@@ -13348,18 +13393,18 @@ LineRenderer:
       m_RotationOrder: 4
     colorGradient:
       serializedVersion: 2
-      key0: {r: 0.14830185, g: 0.47655863, b: 0.5999999, a: 0.5882353}
-      key1: {r: 0.98497003, g: 0.99076277, b: 0.99294114, a: 0.5882353}
-      key2: {r: 0.85660374, g: 0.82232386, b: 0.35395512, a: 0}
-      key3: {r: 0, g: 0, b: 0, a: 0}
+      key0: {r: 0.946112, g: 0.6320754, b: 1, a: 1}
+      key1: {r: 0.94117653, g: 0.627451, b: 0.9921569, a: 1}
+      key2: {r: 0.85660374, g: 0.99607843, b: 0, a: 0}
+      key3: {r: 0.85660374, g: 0.82232386, b: 0.35395512, a: 0}
       key4: {r: 0, g: 0, b: 0, a: 0}
       key5: {r: 0, g: 0, b: 0, a: 0}
       key6: {r: 0, g: 0, b: 0, a: 0}
       key7: {r: 0, g: 0, b: 0, a: 0}
       ctime0: 0
-      ctime1: 32459
-      ctime2: 65535
-      ctime3: 0
+      ctime1: 65535
+      ctime2: 34772
+      ctime3: 41711
       ctime4: 0
       ctime5: 0
       ctime6: 0
@@ -13374,7 +13419,7 @@ LineRenderer:
       atime7: 0
       m_Mode: 0
       m_ColorSpace: 0
-      m_NumColorKeys: 3
+      m_NumColorKeys: 2
       m_NumAlphaKeys: 2
     numCornerVertices: 0
     numCapVertices: 0
@@ -14102,7 +14147,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1465415621}
   - component: {fileID: 1465415620}
-  m_Layer: 6
+  m_Layer: 0
   m_Name: CableController
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -15463,3 +15508,4 @@ SceneRoots:
   - {fileID: 1499205040}
   - {fileID: 776369848}
   - {fileID: 1465415621}
+  - {fileID: 710067088}

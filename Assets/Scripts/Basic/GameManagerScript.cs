@@ -125,7 +125,7 @@ public class GameManager : MonoBehaviour
 
     
     /// Агрегує дані від ВСІХ підстанцій і виводить загальну картину мережі.
-    /// Якщо хоча б одна підстанція в блекауті — показуємо попередження.
+    /// Якщо хоча б одна підстанція в блекауті —  попередження.
     private void UpdateNetworkUI()
     {
         float totalGen  = 0f;
@@ -152,6 +152,12 @@ public class GameManager : MonoBehaviour
             {
                 networkLoadText.text  = "АВАРІЯ В МЕРЕЖІ!";
                 networkLoadText.color = Color.red;
+            }
+            else if (BlackoutUI.Instance != null && BlackoutUI.Instance.IsInGracePeriod)
+            {
+                // Імунітет після відновлення — показуємо відлік
+                networkLoadText.text  = $"Імунітет: {BlackoutUI.Instance.GraceTimeRemaining:F1} с";
+                networkLoadText.color = Color.yellow;
             }
             else if (totalGen > 0f)
             {

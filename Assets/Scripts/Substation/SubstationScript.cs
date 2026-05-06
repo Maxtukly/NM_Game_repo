@@ -2,30 +2,24 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
-
-
-// SubstationScript — це центральний координаційний клас підстанції, який об'єднує всі блоки в єдину систему.
-
-// Відповідальність: координація блоків.
-// - ConnectionRegistry  → управляє списком підключених вузлів
-// - EnergyBalancer      → рахує генерацію, попит, розподіляє енергію  
-// - BlackoutController  → слідкує за дефіцитом і тригерить блекаут
-// 
-// SubstationScript сам по собі НЕ рахує ніяких цифр
-
+/// <summary>
+/// Оркестратор енергоострова. Координує блоки та підписує
+/// BlackoutUI на події BlackoutController.
+/// Не містить жодної UI-логіки — тільки делегує.
+/// </summary>
 public class SubstationScript : MonoBehaviour, IEnergyObject
 {
-    /*-------------------------------- IEnergyObject --------------------------------*/
+    /*──────────────── IEnergyObject ────────────────*/
 
     public GameObject GameObject => gameObject;
     public bool IsConnected { get; set; }
-    public int MaxSlots => _maxSlots;
+    public int MaxSlots  => _maxSlots;
     public int UsedSlots => _registry?.UsedSlots ?? 0;
 
-    /*-------------------------------- Inspector ------------------------------------*/
+    /*──────────────── Inspector ────────────────────*/
 
     [Header("Substation Settings")]
-    [SerializeField] private int _maxSlots = 8;
+    [SerializeField] private int   _maxSlots        = 8;
     [SerializeField] private float _deficitDuration = 3f;
 
     [Header("Visual Feedback")]
@@ -34,75 +28,79 @@ public class SubstationScript : MonoBehaviour, IEnergyObject
     [SerializeField] private Color _colorWarning  = Color.yellow;
     [SerializeField] private Color _colorBlackout = Color.red;
 
-    /*-------------------------------- Блоки (композиція) ---------------------------*/
+   
+    /*──────────────── Блоки ────────────────────────*/
 
-    private ConnectionRegistry  _registry;
-    private EnergyBalancer      _balancer;
-    private BlackoutController  _blackout;
+    private ConnectionRegistry _registry;
+    private EnergyBalancer     _balancer;
+    private BlackoutController _blackout;
 
-    /*-------------------------------- Публічні дані для GameManager ----------------*/
+    /*──────────────── Публічні дані ────────────────*/
 
-    //  Поточна сумарна генерація цього острова (кВт). 
-    public float TotalGeneration => _balancer.TotalGeneration;
+    public float TotalGeneration  => _balancer.TotalGeneration;
+    public float TotalDemand      => _balancer.TotalDemand;
+    public float SupplyRatio      => _balancer.SupplyRatio;
+    public bool  IsBlackout       => _blackout.IsBlackout;
+    public float DeficitProgress  => _blackout.DeficitProgress;
+    public bool  IsDeficitActive  => _balancer.IsDeficit;
+    public int   ConnectedCount   => _registry.UsedSlots;
 
-    //  Поточний сумарний попит цього острова (кВт). 
-    public float TotalDemand => _balancer.TotalDemand;
-
-    //  Коефіцієнт покриття [0..1]. 
-    public float SupplyRatio => _balancer.SupplyRatio;
-
-    //  Стан блекауту для відображення у GameManager. 
-    public bool IsBlackout => _blackout.IsBlackout;
-
-    [Header("UI Блекаут")]
-    public GameObject _blackoutPanel;
-    public TextMeshProUGUI _blackoutTimerText;
-    [SerializeField] private float _graceDuration = 18f;
-
-    private float _graceTimer   = 0f;
-    private bool  _wasBlackout  = false;
-
-    //  Прогрес таймера дефіциту [0..1] для попереджувальної шкали. 
-    public float DeficitProgress => _blackout.DeficitProgress;
-
-    //  Кількість використаних слотів. 
-    public int ConnectedCount => _registry.UsedSlots;
-
-    /*-------------------------------- Realization ------------------------------------*/
+    /*──────────────── Realization ────────────────────*/
 
     private void Awake()
     {
-        // Ініціалізуємо всі блоки через конструктори (Composition Root)
         _registry = new ConnectionRegistry(_maxSlots);
         _balancer = new EnergyBalancer();
         _blackout = new BlackoutController(_deficitDuration);
-    }
 
-    private void Update()
-    {
-        // викликає блоки у правильному порядку
-
-        // 1. Розраховуємо баланс і розподіляємо енергію
-        _balancer.Tick(_registry.Connected, GameManager.Instance.currentTime, _blackout.IsBlackout);
-
-        // 2. Перевіряємо дефіцит і оновлюємо стан блекауту
-        _blackout.Tick(_balancer.IsDeficit);
-
-        UpdateBlackoutUI();
-
-        UpdateVisualStatus();
-
+        // Знаходимо UIHandler через singleton — без Inspector-посилання
+        // Instance гарантовано існує бо BlackoutUI на постійному GameObject сцени
+        SubscribeToUIHandler();
+       
     }
 
     private void OnDestroy()
     {
-        // Знімаємо IsConnected з усіх вузлів при знищенні підстанції
         _registry.Clear();
+
+        UnsubscribeFromUIHandler();
     }
 
-    /*-------------------------------- Connect CableMode ---------------------------*/
+    private void Update()
+    {
+        // Передаємо generation і demand в Tick для передачі в події
+        _balancer.Tick(_registry.Connected, GameManager.Instance.currentTime, _blackout.IsBlackout);
+        _blackout.Tick(_balancer.IsDeficit, _balancer.TotalGeneration, _balancer.TotalDemand);
 
-    // Підключення вузлів (викликаються з CableMode при прокладці кабелів).
+        UpdateVisualStatus();
+    }
+
+    // Підписуємося на події BlackoutController через UIHandler, щоб делегувати показ/приховування UI та оновлення інформації
+    private void SubscribeToUIHandler()
+    {
+        if (BlackoutUI.Instance == null)
+        {
+            Debug.LogWarning("[Substation] BlackoutUI.Instance не знайдено!");
+            return;
+        }
+
+        _blackout.OnBlackoutStarted  += BlackoutUI.Instance.ShowBlackout;
+        _blackout.OnBlackoutRestored += BlackoutUI.Instance.HideBlackout;
+        _blackout.OnDeficitChanged   += BlackoutUI.Instance.UpdateDeficitInfo;
+    }
+
+    // Відписуємося від подій при знищенні, щоб уникнути потенційних помилок
+    private void UnsubscribeFromUIHandler()
+    {
+        if (BlackoutUI.Instance == null) return;
+
+        _blackout.OnBlackoutStarted  -= BlackoutUI.Instance.ShowBlackout;
+        _blackout.OnBlackoutRestored -= BlackoutUI.Instance.HideBlackout;
+        _blackout.OnDeficitChanged   -= BlackoutUI.Instance.UpdateDeficitInfo;
+    }
+
+    /*──────────────── Connection API ───────────────*/
+
     public bool TryConnect(IEnergyObject obj)
     {
         bool success = _registry.TryAdd(obj);
@@ -119,60 +117,19 @@ public class SubstationScript : MonoBehaviour, IEnergyObject
         return success;
     }
 
-    // Відключення вузлів якщо продати підстанцію (викликається з SellMode).
     public bool HasFreeSlot() => _registry.HasFreeSlot;
 
-  
-    // Публічний метод для кнопки UI "Відновити мережу".
-    // Працює тільки якщо гравець усунув дефіцит.
+    /// <summary>
+    /// Публічний метод для кнопки "Відновити мережу".
+    /// </summary>
     public void ManualRestore() => _blackout.TryManualRestore(_balancer.IsDeficit);
 
-    /*-------------------------------- Save/Load Sys --------------------------------*/
+    /*──────────────── Save/Load ─────────────────────*/
 
     public List<Vector3Int> GetConnectedCoordinatesForSave(Grid grid)
         => _registry.GetCoordinatesForSave(grid);
 
-    /*-------------------------------- UI --------------------------------------*/
-
-    private void UpdateBlackoutUI()
-{
-    if (_blackout.IsBlackout)
-    {
-        // Показуємо панельку
-        if (_blackoutPanel != null)
-            _blackoutPanel.SetActive(true);
-
-        // Оновлюємо текст таймера прогресу дефіциту
-        if (_blackoutTimerText != null)
-            _blackoutTimerText.text = $"БЛЕКАУТ!\nУсуньте дефіцит: " +
-                                      $"{(_balancer.TotalDemand - _balancer.TotalGeneration):F1} кВт";
-
-        _wasBlackout = true;
-        _graceTimer  = _graceDuration; // скидаємо таймер імунітету
-    }
-    else
-    {
-        // Ховаємо панельку
-        if (_blackoutPanel != null)
-            _blackoutPanel.SetActive(false);
-
-        // Імунітет після відновлення — відлічуємо
-        if (_wasBlackout && _graceTimer > 0f)
-        {
-            _graceTimer -= Time.deltaTime;
-
-            if (_blackoutTimerText != null)
-                _blackoutTimerText.text = $"Імунітет: {_graceTimer:F1} с";
-
-            if (_graceTimer <= 0f)
-            {
-                _wasBlackout = false;
-                if (_blackoutTimerText != null)
-                    _blackoutTimerText.text = "";
-            }
-        }
-    }
-}
+    /*──────────────── Візуал ───────────────────────*/
 
     private void UpdateVisualStatus()
     {
@@ -184,5 +141,11 @@ public class SubstationScript : MonoBehaviour, IEnergyObject
             _statusIndicator.color = _colorWarning;
         else
             _statusIndicator.color = _colorNormal;
+    }
+
+    private void OnMouseDown()
+    {
+        SelectionManager.Instance.SelectedSubstation = this;
+        Debug.Log($"Підстанція {gameObject.name} вибрана для керування");
     }
 }

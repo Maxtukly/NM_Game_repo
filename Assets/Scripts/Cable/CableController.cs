@@ -324,7 +324,7 @@ public class CableController : MonoBehaviour
 
         if (hit is SubstationScript)
         {
-            Debug.Log("[Cable] RMB на підстанцію: відключення через UI (TODO).");
+            Debug.Log("[Cable] RMB на підстанцію: відключення через UI.");
             return;
         }
 
@@ -350,7 +350,7 @@ public class CableController : MonoBehaviour
         else
             SetCursorStep1();
 
-         Debug.Log($"[Cable] Обрано підстанцію: {node.GameObject.name}. Тепер клікни на споживача або генератора.");
+         Debug.Log($"[Cable] Обрано підстанцію: {node.GameObject.name}.");
     }
 
     private void ConnectToSubstation(IEnergyObject node, SubstationScript substation)

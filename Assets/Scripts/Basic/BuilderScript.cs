@@ -121,7 +121,7 @@ public class BuilderScript : MonoBehaviour
         GameObject prefab = GetPrefabForMode(_currentMode);
         if (prefab == null)
         {
-            Debug.Log("[Builder] Оберіть тип будівлі.");
+            Debug.Log("[Builder] Не обрано тип будівні.");
             return;
         }
 
