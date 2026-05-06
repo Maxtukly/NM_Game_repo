@@ -1,51 +1,75 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class WeatherManager : MonoBehaviour
 {
     public static WeatherManager Instance { get; private set; }
 
-    [SerializeField] float chanceOfRain = 0.3f; // 30% шанс на дощ
-    [SerializeField] ParticleSystem rainEffect; // Ефект дощу
-    public float SolarEnergyModifier { get; private set; } = 1f; // Модифікатор для сонячної енергії (1 - нормальна погода, <1 - дощ)
+    [Header("Weather Settings")]
+    [SerializeField] private float chanceOfRain = 0.3f; // 30% С€Р°РЅСЃ РґРѕС‰Сѓ
+    [SerializeField] private ParticleSystem rainEffect; // РµС„РµРєС‚ РґРѕС‰Сѓ
+
+    [Header("Lighting")]
+    [SerializeField] private LightingManager lightingManager; // Р”РћР”РђРќРћ: РїРѕСЃРёР»Р°РЅРЅСЏ РЅР° РѕСЃРІС–С‚Р»РµРЅРЅСЏ
+
+    public float SolarEnergyModifier { get; private set; } = 1f;
 
     private void Awake()
     {
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
+            return;
         }
-        else
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
+
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
     }
 
-    void Start()
+    private void Start()
     {
         GameManager.Instance.onDateChange.AddListener(OnDateChange);
+
+        // Р”РћР”РђРќРћ: РЅР° СЃС‚Р°СЂС‚С– РІРІР°Р¶Р°С”РјРѕ, С‰Рѕ РґРѕС‰Сѓ РЅРµРјР°С”
+        if (lightingManager != null)
+        {
+            lightingManager.SetRain(false);
+        }
     }
 
     private void OnDateChange()
     {
-        if(Random.value < chanceOfRain)
+        if (Random.value < chanceOfRain)
         {
-            Debug.Log("Сьогодні йде дощ!");
+            Debug.Log("РЎСЊРѕРіРѕРґРЅС– Р№РґРµ РґРѕС‰!");
+
             SolarEnergyModifier = 0.1f;
+
             if (rainEffect != null)
             {
                 rainEffect.Play();
             }
+
+            // Р”РћР”РђРќРћ: РїРѕРІС–РґРѕРјР»СЏС”РјРѕ LightingManager, С‰Рѕ РґРѕС‰ РїРѕС‡Р°РІСЃСЏ
+            if (lightingManager != null)
+            {
+                lightingManager.SetRain(true);
+            }
         }
         else
         {
-            Debug.Log("Сьогодні ясна погода!");
+            Debug.Log("РЎСЊРѕРіРѕРґРЅС– СЏСЃРЅР° РїРѕРіРѕРґР°!");
+
             SolarEnergyModifier = 1f;
+
             if (rainEffect != null)
             {
                 rainEffect.Stop();
+            }
+
+            // Р”РћР”РђРќРћ: РїРѕРІС–РґРѕРјР»СЏС”РјРѕ LightingManager, С‰Рѕ РґРѕС‰Сѓ РЅРµРјР°С”
+            if (lightingManager != null)
+            {
+                lightingManager.SetRain(false);
             }
         }
     }
