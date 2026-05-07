@@ -18,7 +18,7 @@ public class GameManager : MonoBehaviour
     public float currentTime = 0f;
 
     [SerializeField] private float timeSpeed = 1f;
-    [SerializeField] private int date = 1;
+    public int date = 1;
 
     /// Подія зміни дати — підписується WeatherManager
     public UnityEvent onDateChange;

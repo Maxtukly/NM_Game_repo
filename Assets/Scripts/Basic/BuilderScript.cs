@@ -65,6 +65,7 @@ public class BuilderScript : MonoBehaviour
     private BuildMode _currentMode = BuildMode.None;
     private Camera    _mainCamera;
 
+
     /*──────────────────────── Realization  ───────────────────────*/
 
     private void Start()
@@ -92,6 +93,7 @@ public class BuilderScript : MonoBehaviour
         mouseWorld.z = 0f;
         Vector3Int cellPos = _grid.WorldToCell(mouseWorld);
 
+        
         // ЛКМ — будівництво, ПКМ — продаж
         if (Input.GetMouseButtonDown(0))
         {
@@ -110,6 +112,7 @@ public class BuilderScript : MonoBehaviour
 
     private void Build(Vector3Int cellPos)
     {
+        
         // Перевірка: клітинка вже зайнята
         if (_builtBuildings.ContainsKey(cellPos))
         {
@@ -117,7 +120,7 @@ public class BuilderScript : MonoBehaviour
             return;
         }
 
-        // Визнач який префаб будуємо
+        // Визначає який префаб будуємо
         GameObject prefab = GetPrefabForMode(_currentMode);
         if (prefab == null)
         {
@@ -140,6 +143,8 @@ public class BuilderScript : MonoBehaviour
 
         _builtBuildings.Add(cellPos, (obj, cost));
         RegisterToGameSystems(obj);
+
+        _builtBuildingsWithType.Add(cellPos, (obj, cost, (int)_currentMode));
 
         Debug.Log($"[Builder] Побудовано: {prefab.name} на {cellPos}");
     }
@@ -229,5 +234,40 @@ public class BuilderScript : MonoBehaviour
             _cableController.SetActive(true);
 
         Debug.Log($"[Builder] Режим: {_currentMode}");
+    }
+
+    /*──────────────────────── SaveSystem Methods ──────────────────────────*/
+
+    // Викликається SaveSystem при збереженні гри.
+    public IReadOnlyDictionary<Vector3Int, (GameObject obj, float cost, int buildingType)> GetBuiltBuildings() => _builtBuildingsWithType;
+
+    // Змінити внутрішній словник щоб зберігав тип:
+    private Dictionary<Vector3Int, (GameObject obj, float cost, int buildingType)> _builtBuildingsWithType = new();
+
+    // Викликається SaveSystem при завантаженні гри.
+    // Створює об'єкт на сцені і реєструє його в системах.
+    public void BuildFromSave(Vector3Int cellPos, int buildingType)
+    {
+        GameObject prefab = GetPrefabForMode((BuildMode)buildingType);
+        if (prefab == null) return;
+
+        float cost     = BuildCosts.GetValueOrDefault((BuildMode)buildingType, 0f);
+        Vector3 worldPos = _grid.GetCellCenterWorld(cellPos);
+        GameObject obj = Instantiate(prefab, worldPos, Quaternion.identity);
+
+        _builtBuildingsWithType.Add(cellPos, (obj, cost, buildingType));
+        RegisterToGameSystems(obj);
+    }
+
+    public void ClearAllBuildings()
+    {
+        foreach (var entry in _builtBuildings)
+        {
+            UnregisterFromGameSystems(entry.Value.obj);
+            Destroy(entry.Value.obj);
+        }
+
+        _builtBuildings.Clear();
+        _builtBuildingsWithType.Clear();
     }
 }
