@@ -50,6 +50,7 @@ public class SaveSlotPanel : MonoBehaviour
     }
 
     // Відкриває панель в потрібному режимі.
+    // В режимі Save показує список слотів і дозволяє вибрати для збереження.
     public void Open(PanelMode mode)
     {
         _mode = mode;
