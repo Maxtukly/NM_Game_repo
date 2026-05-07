@@ -14003,6 +14003,7 @@ GameObject:
   - component: {fileID: 1420153121}
   - component: {fileID: 1420153123}
   - component: {fileID: 1420153124}
+  - component: {fileID: 1420153125}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -14087,6 +14088,22 @@ MonoBehaviour:
   highlightMap: {fileID: 89146588}
   highlightTile: {fileID: 11400000, guid: b4d4bbdab8828be45a0ad4a7cfb29df7, type: 2}
   RegularTile: {fileID: 11400000, guid: 861d888413f018f4892ff47acd088725, type: 2}
+--- !u!114 &1420153125
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1420153120}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af638c5fc5932504baafd16bf4cf6534, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _blackoutPanel: {fileID: 1251309062}
+  _blackoutTimerText: {fileID: 308662731}
+  _deficitInfoText: {fileID: 1143628685}
+  _graceDuration: 10
 --- !u!1 &1423136885
 GameObject:
   m_ObjectHideFlags: 0
@@ -14271,7 +14288,7 @@ GameObject:
   - component: {fileID: 1465415621}
   - component: {fileID: 1465415620}
   m_Layer: 0
-  m_Name: CableController
+  m_Name: CableManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
