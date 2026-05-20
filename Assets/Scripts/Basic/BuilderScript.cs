@@ -1,14 +1,13 @@
-using System.Collections; // ОБОВ'ЯЗКОВО для роботи корутин
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Tilemaps;
 
-/// Відповідальність: обробка вводу гравця для будівництва та продажу.
-/// В режимі CableMode повністю делегує обробку CableController.
-/// Не містить логіки енергії — тільки спавн/деспавн префабів
-/// і реєстрація в GameManager.
 public class BuilderScript : MonoBehaviour
 {
+    public static BuilderScript Instance { get; private set; }
+
     /*──────────────────────── Enum ─────────────────────────────*/
 
     private enum BuildMode
@@ -25,7 +24,22 @@ public class BuilderScript : MonoBehaviour
 
     /*──────────────────────── Inspector ────────────────────────*/
 
-    [Header("Префаби будівель")]
+    [Header("Tilemap (Графіка)")]
+    [SerializeField] private Tilemap _buildingsTilemap;
+    public Tilemap BuildingsTilemap => _buildingsTilemap; 
+
+    [Header("Тайли будівель (Малюнки)")]
+    [SerializeField] private TileBase _houseTile;
+    [SerializeField] private TileBase _basicStationTile;
+    [SerializeField] private TileBase _solarPanelTile;
+    [SerializeField] private TileBase _factoryTile;
+    [SerializeField] private TileBase _substationTile;
+    [SerializeField] private TileBase _windStationTile;
+    
+    [Tooltip("Тайл недобудови/риштування (замість префабу)")]
+    [SerializeField] private TileBase _constructionTile; 
+
+    [Header("Префаби будівель (Невидима логіка)")]
     [SerializeField] private GameObject _housePrefab;
     [SerializeField] private GameObject _basicStationPrefab;
     [SerializeField] private GameObject _solarPanelPrefab;
@@ -35,14 +49,12 @@ public class BuilderScript : MonoBehaviour
 
     [Header("Ефекти будівництва")]
     [SerializeField] private GameObject _constructionSmokePrefab;  
-    [SerializeField] private GameObject _constructionVisualPrefab; 
     [SerializeField] private float _constructionDelay = 2.0f;      
 
     [Header("Сцена")]
     [SerializeField] private Grid _grid;
 
     [Header("Система кабелів")]
-    [Tooltip("GameObject з компонентом CableController")]
     [SerializeField] private CableController _cableController;
 
     [Header("Баланс")]
@@ -71,10 +83,14 @@ public class BuilderScript : MonoBehaviour
 
     /*──────────────────────── Realization  ───────────────────────*/
 
+    private void Awake()
+    {
+        Instance = this;
+    }
+
     private void Start()
     {
         _mainCamera = Camera.main;
-        Debug.Log("[Builder] Старт.");
     }
 
     private void Update()
@@ -94,7 +110,6 @@ public class BuilderScript : MonoBehaviour
 
         if (Input.GetMouseButtonDown(0))
         {
-            // Скидання виділення в SelectionManager, якщо клікнули на порожнє місце
             Vector2 mousePos2D = new Vector2(mouseWorld.x, mouseWorld.y);
             RaycastHit2D hit = Physics2D.Raycast(mousePos2D, Vector2.zero);
             if (hit.collider == null && SelectionManager.Instance != null)
@@ -102,13 +117,11 @@ public class BuilderScript : MonoBehaviour
                 SelectionManager.Instance.ClearSelection();
             }
 
-            Debug.Log($"[Builder] LMB: будуємо {_currentMode} на {cellPos}");
             Build(cellPos);
         }
 
         if (Input.GetMouseButtonDown(1))
         {
-            Debug.Log($"[Builder] RMB: продаємо на {cellPos}");
             Sell(cellPos);
         }
     }
@@ -117,33 +130,23 @@ public class BuilderScript : MonoBehaviour
 
     private void Build(Vector3Int cellPos)
     {
-        if (_builtBuildings.ContainsKey(cellPos))
-        {
-            Debug.Log("[Builder] Клітинка вже зайнята або будується.");
-            return;
-        }
+        if (_builtBuildings.ContainsKey(cellPos)) return;
 
         GameObject prefab = GetPrefabForMode(_currentMode);
-        if (prefab == null)
-        {
-            Debug.Log("[Builder] Не обрано тип будівні.");
-            return;
-        }
+        TileBase tile = GetTileForMode(_currentMode); 
+
+        if (prefab == null || tile == null) return;
 
         float cost = BuildCosts.GetValueOrDefault(_currentMode, 0f);
-        if (GameManager.Instance.moneyBalance < cost)
-        {
-            Debug.Log("[Builder] Недостатньо коштів.");
-            return;
-        }
+        if (GameManager.Instance.moneyBalance < cost) return;
 
         GameManager.Instance.AddMoney(-cost);
         Vector3 worldPos = _grid.GetCellCenterWorld(cellPos);
 
-        GameObject scaffoldObj = null;
-        if (_constructionVisualPrefab != null)
+        // 1. ОДРАЗУ малюємо тайл риштування на сітці
+        if (_buildingsTilemap != null && _constructionTile != null)
         {
-            scaffoldObj = Instantiate(_constructionVisualPrefab, worldPos, Quaternion.identity);
+            _buildingsTilemap.SetTile(cellPos, _constructionTile);
         }
 
         GameObject smokeObj = null;
@@ -152,42 +155,45 @@ public class BuilderScript : MonoBehaviour
             smokeObj = Instantiate(_constructionSmokePrefab, worldPos, Quaternion.identity);
         }
 
-        _builtBuildings.Add(cellPos, (scaffoldObj, cost));
+        // Записуємо (null, cost), бо логічний об'єкт ще не створено
+        _builtBuildings.Add(cellPos, (null, cost));
 
-        StartCoroutine(ConstructionRoutine(cellPos, prefab, scaffoldObj, smokeObj, cost));
+        StartCoroutine(ConstructionRoutine(cellPos, prefab, tile, smokeObj, cost));
     }
 
-    private IEnumerator ConstructionRoutine(Vector3Int cellPos, GameObject finalPrefab, GameObject scaffold, GameObject smoke, float cost)
+    private IEnumerator ConstructionRoutine(Vector3Int cellPos, GameObject finalPrefab, TileBase finalTile, GameObject smoke, float cost)
     {
         yield return new WaitForSeconds(_constructionDelay);
 
-        if (!_builtBuildings.TryGetValue(cellPos, out var entry) || entry.obj != scaffold)
+        // Перевіряємо, чи гравець не натиснув "продати" під час очікування (тоді obj залишився б null або запис зник)
+        if (!_builtBuildings.TryGetValue(cellPos, out var entry) || entry.obj != null)
         {
             if (smoke != null) StopAndDestroySmoke(smoke);
             yield break;
         }
 
-        if (scaffold != null) Destroy(scaffold);
-
         Vector3 worldPos = _grid.GetCellCenterWorld(cellPos);
         GameObject finalObj = Instantiate(finalPrefab, worldPos, Quaternion.identity);
 
+        if (finalObj.TryGetComponent<BasicStation>(out var station))
+        {
+            station.SetGridPosition(cellPos);
+        }
+
+        if (_buildingsTilemap != null)
+        {
+            _buildingsTilemap.SetTile(cellPos, finalTile);
+        }
+
         _builtBuildings[cellPos] = (finalObj, cost);
-        
         RegisterToGameSystems(finalObj);
 
-        // Зупиняємо дим
         if (smoke != null) StopAndDestroySmoke(smoke);
-        
-        Debug.Log($"[Builder] Побудовано: {finalPrefab.name} на {cellPos}");
     }
 
     private void StopAndDestroySmoke(GameObject smoke)
     {
-        if (smoke.TryGetComponent<ParticleSystem>(out var ps))
-        {
-            ps.Stop();
-        }
+        if (smoke.TryGetComponent<ParticleSystem>(out var ps)) ps.Stop();
         Destroy(smoke, 3f);
     }
 
@@ -204,48 +210,33 @@ public class BuilderScript : MonoBehaviour
             {
                 UnregisterFromGameSystems(entry.obj);
             }
-            
-            Destroy(entry.obj);
+            Destroy(entry.obj); 
+        }
+
+        if (_buildingsTilemap != null)
+        {
+            _buildingsTilemap.SetTile(cellPos, null);
         }
 
         _builtBuildings.Remove(cellPos);
-        Debug.Log($"[Builder] Продано/Скасовано на {cellPos}. Повернуто: {refund:F0}$");
     }
 
     /*──────────────────────── Реєстрація ───────────────────────*/
-
     private void RegisterToGameSystems(GameObject obj)
     {
-        if (obj.TryGetComponent<SubstationScript>(out var sub))
-        {
-            GameManager.Instance.RegisterSubstation(sub);
-            return;
-        }
-
-        if (obj.TryGetComponent<IEnergyConsumer>(out var consumer))
-            GameManager.Instance.consumers.Add(consumer);
-
-        if (obj.TryGetComponent<IEnergyProducer>(out var producer))
-            GameManager.Instance.producers.Add(producer);
+        if (obj.TryGetComponent<SubstationScript>(out var sub)) { GameManager.Instance.RegisterSubstation(sub); return; }
+        if (obj.TryGetComponent<IEnergyConsumer>(out var consumer)) GameManager.Instance.consumers.Add(consumer);
+        if (obj.TryGetComponent<IEnergyProducer>(out var producer)) GameManager.Instance.producers.Add(producer);
     }
 
     private void UnregisterFromGameSystems(GameObject obj)
     {
-        if (obj.TryGetComponent<SubstationScript>(out var sub))
-        {
-            GameManager.Instance.UnregisterSubstation(sub);
-            return;
-        }
-
-        if (obj.TryGetComponent<IEnergyConsumer>(out var consumer))
-            GameManager.Instance.consumers.Remove(consumer);
-
-        if (obj.TryGetComponent<IEnergyProducer>(out var producer))
-            GameManager.Instance.producers.Remove(producer);
+        if (obj.TryGetComponent<SubstationScript>(out var sub)) { GameManager.Instance.UnregisterSubstation(sub); return; }
+        if (obj.TryGetComponent<IEnergyConsumer>(out var consumer)) GameManager.Instance.consumers.Remove(consumer);
+        if (obj.TryGetComponent<IEnergyProducer>(out var producer)) GameManager.Instance.producers.Remove(producer);
     }
 
     /*──────────────────────── Helpers ──────────────────────────*/
-
     private GameObject GetPrefabForMode(BuildMode mode) => mode switch
     {
         BuildMode.House        => _housePrefab,
@@ -257,20 +248,22 @@ public class BuilderScript : MonoBehaviour
         _                      => null
     };
 
-    /*──────────────────────── UI Callback ──────────────────────*/
+    private TileBase GetTileForMode(BuildMode mode) => mode switch
+    {
+        BuildMode.House        => _houseTile,
+        BuildMode.BasicStation => _basicStationTile,
+        BuildMode.SolarPanel   => _solarPanelTile,
+        BuildMode.Factory      => _factoryTile,
+        BuildMode.Substation   => _substationTile,
+        BuildMode.WindStation  => _windStationTile,
+        _                      => null
+    };
 
     public void OnDropdownValueChanged(int selectedIndex)
     {
         BuildMode newMode = (BuildMode)selectedIndex;
-
-        if (_currentMode == BuildMode.CableMode && newMode != BuildMode.CableMode)
-            _cableController.SetActive(false);
-
+        if (_currentMode == BuildMode.CableMode && newMode != BuildMode.CableMode) _cableController.SetActive(false);
         _currentMode = newMode;
-
-        if (_currentMode == BuildMode.CableMode)
-            _cableController.SetActive(true);
-
-        Debug.Log($"[Builder] Режим: {_currentMode}");
+        if (_currentMode == BuildMode.CableMode) _cableController.SetActive(true);
     }
 }

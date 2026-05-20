@@ -14368,6 +14368,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9808318572ab39644b266c4ade0024e2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _buildingsTilemap: {fileID: 2131185800}
+  _houseTile: {fileID: 11400000, guid: a84e0441ca05b024f9bc1f811a2df6b7, type: 2}
+  _basicStationTile: {fileID: 11400000, guid: 6cf970f74ad84f84a8b5fecfb314ed24, type: 2}
+  _solarPanelTile: {fileID: 11400000, guid: 232b96800b839e84fb889a10087b6158, type: 2}
+  _factoryTile: {fileID: 11400000, guid: 010db6698a297e44a824c111ea8c978a, type: 2}
+  _substationTile: {fileID: 11400000, guid: f78fb1328f03fc44f9a451ab1de845eb, type: 2}
+  _windStationTile: {fileID: 11400000, guid: e1f97bbd35717b54d874518cfc251b05, type: 2}
+  _constructionTile: {fileID: 11400000, guid: d6877a8db7ff157448754dcf4ad239ad, type: 2}
   _housePrefab: {fileID: 1261768044341795638, guid: 4d3c03cc51a9dfe409f39948b5b8b6b3, type: 3}
   _basicStationPrefab: {fileID: 5738057938059590174, guid: abddb4fccd0768a43916a8c052e77a5f, type: 3}
   _solarPanelPrefab: {fileID: 7783797600256655561, guid: 8c7452fa7ba942d448e16c497a71e989, type: 3}
@@ -14375,7 +14383,6 @@ MonoBehaviour:
   _substationPrefab: {fileID: 1578277120505148865, guid: e0b18b5950491b9408129ea4d9df8310, type: 3}
   _windStationPrefab: {fileID: 5079963474715268279, guid: 6619e37ab7377c04bb572b9e90a645fe, type: 3}
   _constructionSmokePrefab: {fileID: 2405606021582606450, guid: b17bf267739c8ce45a040113591edb03, type: 3}
-  _constructionVisualPrefab: {fileID: 4227105386681094792, guid: b758762ebfe726a449d2fec2466c1388, type: 3}
   _constructionDelay: 4
   _grid: {fileID: 1377669448}
   _cableController: {fileID: 1465415620}
@@ -14435,7 +14442,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -9.7518, y: 160}
+  m_AnchoredPosition: {x: -9.7518, y: 213}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1437688209
