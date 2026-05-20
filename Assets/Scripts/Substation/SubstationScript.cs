@@ -145,7 +145,6 @@ public class SubstationScript : MonoBehaviour, IEnergyObject
 
     private void OnMouseDown()
     {
-        SelectionManager.Instance.SelectedSubstation = this;
-        Debug.Log($"Підстанція {gameObject.name} вибрана для керування");
+        SelectionManager.Instance.SelectSubstation(this);
     }
 }

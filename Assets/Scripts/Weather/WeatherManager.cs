@@ -9,9 +9,11 @@ public class WeatherManager : MonoBehaviour
     [SerializeField] private ParticleSystem rainEffect; // ефект дощу
 
     [Header("Lighting")]
-    [SerializeField] private LightingManager lightingManager; // ДОДАНО: посилання на освітлення
+    [SerializeField] private LightingManager lightingManager; 
 
     public float SolarEnergyModifier { get; private set; } = 1f;
+    
+    public float WindEnergyModifier { get; private set; } = 1f;
 
     private void Awake()
     {
@@ -29,7 +31,6 @@ public class WeatherManager : MonoBehaviour
     {
         GameManager.Instance.onDateChange.AddListener(OnDateChange);
 
-        // ДОДАНО: на старті вважаємо, що дощу немає
         if (lightingManager != null)
         {
             lightingManager.SetRain(false);
@@ -40,16 +41,16 @@ public class WeatherManager : MonoBehaviour
     {
         if (Random.value < chanceOfRain)
         {
-            Debug.Log("Сьогодні йде дощ!");
+            Debug.Log("Сьогодні йде дощ і дує сильний вітер!");
 
             SolarEnergyModifier = 0.1f;
+            WindEnergyModifier = 2.5f;
 
             if (rainEffect != null)
             {
                 rainEffect.Play();
             }
 
-            // ДОДАНО: повідомляємо LightingManager, що дощ почався
             if (lightingManager != null)
             {
                 lightingManager.SetRain(true);
@@ -57,16 +58,16 @@ public class WeatherManager : MonoBehaviour
         }
         else
         {
-            Debug.Log("Сьогодні ясна погода!");
+            Debug.Log("Сьогодні ясна погода, вітер помірний.");
 
             SolarEnergyModifier = 1f;
+            WindEnergyModifier = 1.0f; 
 
             if (rainEffect != null)
             {
                 rainEffect.Stop();
             }
 
-            // ДОДАНО: повідомляємо LightingManager, що дощу немає
             if (lightingManager != null)
             {
                 lightingManager.SetRain(false);

@@ -33,6 +33,7 @@ public class GameManager : MonoBehaviour
 
     [Header("Economics")]
     public float moneyBalance = 0f;
+    public static bool ChosenSandboxMode = true;
 
     /*-------------------------------- UI -------------------------------------------*/
 
@@ -69,6 +70,11 @@ public class GameManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
         onDateChange = new UnityEvent();
+
+        if (ChosenSandboxMode)
+        {
+            moneyBalance = float.PositiveInfinity;
+        }
     }
 
     private void Update()
@@ -142,7 +148,14 @@ public class GameManager : MonoBehaviour
 
     private void UpdateMoneyUI()
     {
-        moneyText.text = $"Бюджет: {moneyBalance:F0} $";
+        if (float.IsPositiveInfinity(moneyBalance))
+        {
+            moneyText.text = "Бюджет: inf $";
+        }
+        else
+        {
+            moneyText.text = $"Бюджет: {moneyBalance:F0} $";
+        }
     }
 
     private void UpdateNetworkUI()

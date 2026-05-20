@@ -1,7 +1,7 @@
+using System.Collections; // ОБОВ'ЯЗКОВО для роботи корутин
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
-
 
 /// Відповідальність: обробка вводу гравця для будівництва та продажу.
 /// В режимі CableMode повністю делегує обробку CableController.
@@ -20,6 +20,7 @@ public class BuilderScript : MonoBehaviour
         BasicStation = 4,
         SolarPanel   = 5,
         Factory      = 6,
+        WindStation  = 7,
     }
 
     /*──────────────────────── Inspector ────────────────────────*/
@@ -30,6 +31,12 @@ public class BuilderScript : MonoBehaviour
     [SerializeField] private GameObject _solarPanelPrefab;
     [SerializeField] private GameObject _factoryPrefab;
     [SerializeField] private GameObject _substationPrefab;
+    [SerializeField] private GameObject _windStationPrefab;
+
+    [Header("Ефекти будівництва")]
+    [SerializeField] private GameObject _constructionSmokePrefab;  
+    [SerializeField] private GameObject _constructionVisualPrefab; 
+    [SerializeField] private float _constructionDelay = 2.0f;      
 
     [Header("Сцена")]
     [SerializeField] private Grid _grid;
@@ -43,7 +50,6 @@ public class BuilderScript : MonoBehaviour
 
     /*──────────────────────── Вартість будівель ────────────────*/
 
-   // Вартість будівництва для кожного типу об'єкта.
     private static readonly Dictionary<BuildMode, float> BuildCosts
         = new Dictionary<BuildMode, float>
     {
@@ -52,13 +58,11 @@ public class BuilderScript : MonoBehaviour
         { BuildMode.SolarPanel,   400f  },
         { BuildMode.Factory,      1000f },
         { BuildMode.Substation,   800f  },
+        { BuildMode.WindStation,  600f  },
     };
 
     /*──────────────────────── Data ─────────────────────────────*/
 
-    // Словник побудованих об'єктів.
-    // Key: координата клітинки, Value: (об'єкт, вартість будівництва).
-    // Вартість потрібна для розрахунку відшкодування при продажу.
     private readonly Dictionary<Vector3Int, (GameObject obj, float cost)> _builtBuildings
         = new Dictionary<Vector3Int, (GameObject obj, float cost)>();
 
@@ -76,25 +80,28 @@ public class BuilderScript : MonoBehaviour
     private void Update()
     {
         if (_mainCamera == null) return;
-
-        // Блок кліки по UI
         if (EventSystem.current.IsPointerOverGameObject()) return;
 
-        // Режим кабелів — CableController обробляє все самостійно
         if (_currentMode == BuildMode.CableMode)
         {
             _cableController.HandleUpdate();
             return;
         }
 
-        // Беремо позицію миші в світі та конвертуємо в координати клітинки
         Vector3 mouseWorld = _mainCamera.ScreenToWorldPoint(Input.mousePosition);
         mouseWorld.z = 0f;
         Vector3Int cellPos = _grid.WorldToCell(mouseWorld);
 
-        // ЛКМ — будівництво, ПКМ — продаж
         if (Input.GetMouseButtonDown(0))
         {
+            // Скидання виділення в SelectionManager, якщо клікнули на порожнє місце
+            Vector2 mousePos2D = new Vector2(mouseWorld.x, mouseWorld.y);
+            RaycastHit2D hit = Physics2D.Raycast(mousePos2D, Vector2.zero);
+            if (hit.collider == null && SelectionManager.Instance != null)
+            {
+                SelectionManager.Instance.ClearSelection();
+            }
+
             Debug.Log($"[Builder] LMB: будуємо {_currentMode} на {cellPos}");
             Build(cellPos);
         }
@@ -110,14 +117,12 @@ public class BuilderScript : MonoBehaviour
 
     private void Build(Vector3Int cellPos)
     {
-        // Перевірка: клітинка вже зайнята
         if (_builtBuildings.ContainsKey(cellPos))
         {
-            Debug.Log("[Builder] Клітинка вже зайнята.");
+            Debug.Log("[Builder] Клітинка вже зайнята або будується.");
             return;
         }
 
-        // Визнач який префаб будуємо
         GameObject prefab = GetPrefabForMode(_currentMode);
         if (prefab == null)
         {
@@ -125,7 +130,6 @@ public class BuilderScript : MonoBehaviour
             return;
         }
 
-        // Перевірка балансу
         float cost = BuildCosts.GetValueOrDefault(_currentMode, 0f);
         if (GameManager.Instance.moneyBalance < cost)
         {
@@ -133,15 +137,58 @@ public class BuilderScript : MonoBehaviour
             return;
         }
 
-        // Будуємо, списуємо гроші, реєструємо в системах
         GameManager.Instance.AddMoney(-cost);
-        Vector3    worldPos = _grid.GetCellCenterWorld(cellPos);
-        GameObject obj      = Instantiate(prefab, worldPos, Quaternion.identity);
+        Vector3 worldPos = _grid.GetCellCenterWorld(cellPos);
 
-        _builtBuildings.Add(cellPos, (obj, cost));
-        RegisterToGameSystems(obj);
+        GameObject scaffoldObj = null;
+        if (_constructionVisualPrefab != null)
+        {
+            scaffoldObj = Instantiate(_constructionVisualPrefab, worldPos, Quaternion.identity);
+        }
 
-        Debug.Log($"[Builder] Побудовано: {prefab.name} на {cellPos}");
+        GameObject smokeObj = null;
+        if (_constructionSmokePrefab != null)
+        {
+            smokeObj = Instantiate(_constructionSmokePrefab, worldPos, Quaternion.identity);
+        }
+
+        _builtBuildings.Add(cellPos, (scaffoldObj, cost));
+
+        StartCoroutine(ConstructionRoutine(cellPos, prefab, scaffoldObj, smokeObj, cost));
+    }
+
+    private IEnumerator ConstructionRoutine(Vector3Int cellPos, GameObject finalPrefab, GameObject scaffold, GameObject smoke, float cost)
+    {
+        yield return new WaitForSeconds(_constructionDelay);
+
+        if (!_builtBuildings.TryGetValue(cellPos, out var entry) || entry.obj != scaffold)
+        {
+            if (smoke != null) StopAndDestroySmoke(smoke);
+            yield break;
+        }
+
+        if (scaffold != null) Destroy(scaffold);
+
+        Vector3 worldPos = _grid.GetCellCenterWorld(cellPos);
+        GameObject finalObj = Instantiate(finalPrefab, worldPos, Quaternion.identity);
+
+        _builtBuildings[cellPos] = (finalObj, cost);
+        
+        RegisterToGameSystems(finalObj);
+
+        // Зупиняємо дим
+        if (smoke != null) StopAndDestroySmoke(smoke);
+        
+        Debug.Log($"[Builder] Побудовано: {finalPrefab.name} на {cellPos}");
+    }
+
+    private void StopAndDestroySmoke(GameObject smoke)
+    {
+        if (smoke.TryGetComponent<ParticleSystem>(out var ps))
+        {
+            ps.Stop();
+        }
+        Destroy(smoke, 3f);
     }
 
     private void Sell(Vector3Int cellPos)
@@ -151,19 +198,22 @@ public class BuilderScript : MonoBehaviour
         float refund = entry.cost * _sellRefundMultiplier;
         GameManager.Instance.AddMoney(refund);
 
-        UnregisterFromGameSystems(entry.obj);
-        Destroy(entry.obj);
-        _builtBuildings.Remove(cellPos);
+        if (entry.obj != null)
+        {
+            if (entry.obj.GetComponent<IEnergyObject>() != null || entry.obj.GetComponent<SubstationScript>() != null)
+            {
+                UnregisterFromGameSystems(entry.obj);
+            }
+            
+            Destroy(entry.obj);
+        }
 
-        Debug.Log($"[Builder] Продано на {cellPos}. Повернуто: {refund:F0}$");
+        _builtBuildings.Remove(cellPos);
+        Debug.Log($"[Builder] Продано/Скасовано на {cellPos}. Повернуто: {refund:F0}$");
     }
 
     /*──────────────────────── Реєстрація ───────────────────────*/
 
-    
-    // Підстанція реєструється в GameManager окремо — через RegisterSubstation().
-    // Всі інші об'єкти додаються до старих списків consumers/producers
-    // для сумісності з GraphScript і GetBlackoutForecast().
     private void RegisterToGameSystems(GameObject obj)
     {
         if (obj.TryGetComponent<SubstationScript>(out var sub))
@@ -196,7 +246,6 @@ public class BuilderScript : MonoBehaviour
 
     /*──────────────────────── Helpers ──────────────────────────*/
 
-    // Визначає який префаб спавнити для поточного режиму.
     private GameObject GetPrefabForMode(BuildMode mode) => mode switch
     {
         BuildMode.House        => _housePrefab,
@@ -204,27 +253,21 @@ public class BuilderScript : MonoBehaviour
         BuildMode.SolarPanel   => _solarPanelPrefab,
         BuildMode.Factory      => _factoryPrefab,
         BuildMode.Substation   => _substationPrefab,
+        BuildMode.WindStation  => _windStationPrefab,
         _                      => null
     };
 
     /*──────────────────────── UI Callback ──────────────────────*/
 
-
-    /// Викликається Dropdown у UI.
-    /// Індекс відповідає значенню enum BuildMode.
-    /// При перемиканні в/з CableMode — сповіщає CableController.
-
     public void OnDropdownValueChanged(int selectedIndex)
     {
         BuildMode newMode = (BuildMode)selectedIndex;
 
-        //  CableMode викл якщо переходимо на інший режим
         if (_currentMode == BuildMode.CableMode && newMode != BuildMode.CableMode)
             _cableController.SetActive(false);
 
         _currentMode = newMode;
 
-        // Вкл CableMode
         if (_currentMode == BuildMode.CableMode)
             _cableController.SetActive(true);
 
