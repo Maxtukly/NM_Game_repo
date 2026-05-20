@@ -25,8 +25,7 @@ public class BasicStation : MonoBehaviour, IEnergyProducer, IEnergyObject
     private int _currentLevelIndex = 0;
 
     [Header("Upgrade Visual Effects")]
-    [Tooltip("Тайл недобудови/риштування (замість префабу)")]
-    [SerializeField] private TileBase _constructionTile; // НОВЕ
+    [SerializeField] private TileBase _constructionTile; 
     [SerializeField] private GameObject _constructionSmokePrefab;  
 
     private bool _isUpgrading = false; 

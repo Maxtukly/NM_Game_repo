@@ -24,22 +24,20 @@ public class BuilderScript : MonoBehaviour
 
     /*──────────────────────── Inspector ────────────────────────*/
 
-    [Header("Tilemap (Графіка)")]
+    [Header("Tilemap")]
     [SerializeField] private Tilemap _buildingsTilemap;
     public Tilemap BuildingsTilemap => _buildingsTilemap; 
 
-    [Header("Тайли будівель (Малюнки)")]
+    [Header("Тайли будівель")]
     [SerializeField] private TileBase _houseTile;
     [SerializeField] private TileBase _basicStationTile;
     [SerializeField] private TileBase _solarPanelTile;
     [SerializeField] private TileBase _factoryTile;
     [SerializeField] private TileBase _substationTile;
     [SerializeField] private TileBase _windStationTile;
-    
-    [Tooltip("Тайл недобудови/риштування (замість префабу)")]
     [SerializeField] private TileBase _constructionTile; 
 
-    [Header("Префаби будівель (Невидима логіка)")]
+    [Header("Префаби")]
     [SerializeField] private GameObject _housePrefab;
     [SerializeField] private GameObject _basicStationPrefab;
     [SerializeField] private GameObject _solarPanelPrefab;
@@ -164,8 +162,6 @@ public class BuilderScript : MonoBehaviour
     private IEnumerator ConstructionRoutine(Vector3Int cellPos, GameObject finalPrefab, TileBase finalTile, GameObject smoke, float cost)
     {
         yield return new WaitForSeconds(_constructionDelay);
-
-        // Перевіряємо, чи гравець не натиснув "продати" під час очікування (тоді obj залишився б null або запис зник)
         if (!_builtBuildings.TryGetValue(cellPos, out var entry) || entry.obj != null)
         {
             if (smoke != null) StopAndDestroySmoke(smoke);
